@@ -43,30 +43,29 @@ print(data_sample.dtypes)
 #popunjavanje nedostajucih vrenodsti srednjom vrednosti
 data_filled = data_sample.fillna(data_sample.mean())
 
-# Izbacivanje visoko koreliranih kolona
+#izbacivanje visoko koreliranih kolona
 corr_matrix = data_filled.corr().abs()
 upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
 to_drop = [column for column in upper.columns if any(upper[column] > 0.95)]
 data_reduced = data_filled.drop(columns=to_drop)
 
-# Prikaz matrice korelacije
+#matrica korelacije
 correlation_matrix = data_reduced.corr()
 sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.1)
 plt.title('Matrica korelacije (nakon izbacivanja visoko koreliranih kolona)')
 plt.show()
 
-# Analiza distribucije podataka
+#analiza distribucije podataka
 data_reduced.hist(bins=30, figsize=(15, 10))
 plt.suptitle('Distribucija podataka')
 plt.show()
 
-# Provera ekstremnih vrednosti pomoću boxplot-a
+#provera outliera
 plt.figure(figsize=(15, 10))
 sns.boxplot(data=data_reduced)
 plt.title('Boxplot podataka za identifikaciju ekstremnih vrednosti')
 plt.show()
 
-# Funkcija za uklanjanje outliera korišćenjem IQR metode
 def remove_outliers_iqr(df):
     Q1 = df.quantile(0.25)
     Q3 = df.quantile(0.75)
@@ -93,7 +92,7 @@ cancelled_counts = data_no_outliers["Cancelled"].value_counts()
 print("Broj 0 u koloni 'Cancelled':", cancelled_counts[0])
 print("Broj 1 u koloni 'Cancelled':", cancelled_counts[1])
 
-# Balansiranje podataka - SMOTE
+#balansiranje podataka - SMOTE
 if data_no_outliers['Cancelled'].nunique() == 1:
     data_no_outliers = data_reduced.copy()
 else:
@@ -108,32 +107,32 @@ else:
 target = 'Cancelled'
 features = data_no_outliers.drop(columns=[target]).columns
 
-# Podela podataka na trening i test skupove
+#podela podataka na trening i test skupove
 X_train, X_test, y_train, y_test = train_test_split(data_no_outliers[features], data_no_outliers[target], test_size=0.2,
                                                     random_state=42)
 
-# Treniranje logističke regresije na starim podacima
+
 logistic_model = LogisticRegression(max_iter=1000)
 logistic_model.fit(X_train, y_train)
 
-# Predikcija i evaluacija logističke regresije na starim podacima
+#predikcija i evaluacija logisticke reg
 y_pred_logistic = logistic_model.predict(X_test)
 print("Logistic Regression Classification Report")
 print(classification_report(y_test, y_pred_logistic))
 print('Logistic Regression Accuracy:', accuracy_score(y_test, y_pred_logistic))
 print('Logistic Regression Confusion Matrix :\n', confusion_matrix(y_test, y_pred_logistic))
 
-# Provera linearne zavisnosti za logisticku regresiju
+#provera linearne zavisnosti 
 linearity_satisfied = linearity_assumption(logistic_model, X_train, y_train)
 print("Linearna zavisnost zadovoljena:", linearity_satisfied)
 
 
 
-# Treniranje Random Forest modela na starim podacima
+## random forest
 rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
 rf_model.fit(X_train, y_train)
 
-# Predikcija i evaluacija Random Forest modela na starim podacima
+
 y_pred_rf = rf_model.predict(X_test)
 print("Random Forest Classification Report (pre scalinga)")
 print(classification_report(y_test, y_pred_rf))
@@ -141,16 +140,16 @@ print('Random Forest Accuracy (pre scalinga):', accuracy_score(y_test, y_pred_rf
 print('Random Forest Confusion Matrix (pre scalinga):\n', confusion_matrix(y_test, y_pred_rf))
 
 
-# Skaliranje podataka
+#normalizacija podataka
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-# Treniranje Random Forest modela na normalizovanim podacima
+#rf nad normalizovanim
 rf_model_scaled = RandomForestClassifier(n_estimators=100, random_state=42)
 rf_model_scaled.fit(X_train_scaled, y_train)
 
-# Predikcija i evaluacija Random Forest modela na normalizovanim podacima
+
 y_pred_rf_scaled = rf_model_scaled.predict(X_test_scaled)
 print("Random Forest Classification Report (nakon scalinga)")
 print(classification_report(y_test, y_pred_rf_scaled))
@@ -158,16 +157,16 @@ print('Random Forest Accuracy (nakon scalinga):', accuracy_score(y_test, y_pred_
 print('Random Forest Confusion Matrix (nakon scalinga):\n', confusion_matrix(y_test, y_pred_rf_scaled))
 
 
-# Polinomijalna transformacija
+#polinomijalna transformacija
 poly = PolynomialFeatures(degree=2, interaction_only=False, include_bias=False)
 X_train_poly = poly.fit_transform(X_train) ## scaled
 X_test_poly = poly.transform(X_test) ## scaled
 
-# Treniranje Random Forest modela na polinomijalno transformisanim podacima
+#rf polinomijalni
 rf_model_poly = RandomForestClassifier(n_estimators=100, random_state=42)
 rf_model_poly.fit(X_train_poly, y_train)
 
-# Predikcija i evaluacija Random Forest modela na polinomijalno transformisanim podacima
+
 y_pred_rf_poly = rf_model_poly.predict(X_test_poly)
 print("Random Forest Classification Report (nakon polinomijalne transformacije)")
 print(classification_report(y_test, y_pred_rf_poly))
@@ -175,7 +174,7 @@ print('Random Forest Accuracy (nakon polinomijalne transformacije):', accuracy_s
 print('Random Forest Confusion Matrix (nakon polinomijalne transformacije):\n',
       confusion_matrix(y_test, y_pred_rf_poly))
 
-# Randomized Search za optimizaciju hiperparametara
+#randomized search za optimizaciju hiperparametara
 param_dist = {
     'n_estimators': [100, 200, 300, 400],
     'max_depth': [10, 20, 30, None],
@@ -187,11 +186,10 @@ random_search = RandomizedSearchCV(estimator=RandomForestClassifier(), param_dis
 random_search.fit(X_train, y_train)
 best_params = random_search.best_params_
 
-# Treniranje Random Forest modela sa najboljim hiperparametrima
+# rf sa najboljim hiperparametrima
 rf_best_model = RandomForestClassifier(**best_params, random_state=42)
 rf_best_model.fit(X_train, y_train)
 
-# Predikcija i evaluacija Random Forest modela sa najboljim hiperparametrima
 y_pred_rf_best = rf_best_model.predict(X_test)
 print("Random Forest Classification Report (sa najboljim hiperparametrima)")
 print(classification_report(y_test, y_pred_rf_best))
